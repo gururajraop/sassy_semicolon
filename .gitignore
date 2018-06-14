@@ -1,0 +1,4 @@
+**/deeplab/ImagenetCheckpoint/*
+**/deeplab/logs/*
+**/deeplab/__pycache__/*
+**/deeplab/datasets/pascal_voc_seg/*
