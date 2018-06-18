@@ -113,6 +113,7 @@ _MSCOCO_INFORMATION = DatasetDescriptor(
         'val': 2693,  # num of samples in images/validation
     },
     num_classes=2,
+    ignore_label=255,
 )
 
 
