@@ -109,8 +109,8 @@ _ADE20K_INFORMATION = DatasetDescriptor(
 
 _MSCOCO_INFORMATION = DatasetDescriptor(
     splits_to_sizes={
-        'train': 20210,  # num of samples in images/training
-        'val': 2000,  # num of samples in images/validation
+        'train': 64111,  # num of samples in images/training
+        'val': 2693,  # num of samples in images/validation
     },
     num_classes=2,
 )

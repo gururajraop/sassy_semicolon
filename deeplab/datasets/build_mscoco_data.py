@@ -87,7 +87,7 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('image_folder',
-                           './MSCOCO/Images',
+                           '.\MSCOCO\Images',
                            'Folder containing images.')
 
 tf.app.flags.DEFINE_string(
@@ -105,8 +105,7 @@ tf.app.flags.DEFINE_string(
     './tfrecord',
     'Path to save converted SSTable of TensorFlow examples.')
 
-
-_NUM_SHARDS = 4
+_NUM_SHARDS = 30
 
 
 def _convert_dataset(dataset_split):
@@ -124,7 +123,7 @@ def _convert_dataset(dataset_split):
   num_images = len(filenames)
   num_per_shard = int(math.ceil(num_images / float(_NUM_SHARDS)))
 
-  image_reader = build_data.ImageReader('jpeg', channels=3)
+  image_reader = build_data.ImageReader('jpg', channels=3)
   label_reader = build_data.ImageReader('png', channels=1)
 
   for shard_id in range(_NUM_SHARDS):
