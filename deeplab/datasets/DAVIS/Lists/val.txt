@@ -1,0 +1,17 @@
+bike-packing
+bmx-trees
+breakdance
+dance-twirl
+horsejump-high
+india
+judo
+kite-surf
+lab-coat
+loading
+mbike-trick
+motocross-jump
+paragliding-launch
+parkour
+scooter-black
+shooting
+soapbox
