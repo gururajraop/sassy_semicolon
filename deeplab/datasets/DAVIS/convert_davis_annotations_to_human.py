@@ -6,10 +6,12 @@ from PIL import Image
 import numpy as np
 
 class AnnotationsModifier:
+    # folder where the annotations of the original DAVIS dataset are
     SOURCE_DAVIS_ANNOTATIONS_PATH = './humanDAVIS/Annotations/'
+    # folder where the converted annotations of the DAVIS dataset will be
     DEST_DAVIS_ANNOTATIONS_PATH = './humanDAVIS/ConvertedAnnotations/'
 
-    # colors in pallete
+    # colors in DAVIS pallete
     BLACK = 0
     RED = 1
     GREEN = 2
@@ -20,7 +22,7 @@ class AnnotationsModifier:
     GRAY = 7
     BROWN = 8
 
-
+    # color in which humans will be recolored
     HUMAN_COLOR = RED
 
     def modify_all_annotations(self):
@@ -28,8 +30,7 @@ class AnnotationsModifier:
         subdirectories.sort()
 
         for subdirectory in subdirectories:
-            if subdirectory == 'scooter-gray':
-                self.call_method(subdirectory)
+            self.call_method(subdirectory)
 
     def call_method(self, subdirectory):
         method_name = 'modify_' + subdirectory.replace('-', '_') + '_' + 'annotations'
@@ -37,18 +38,18 @@ class AnnotationsModifier:
 
     def create_dest_folder(self, subdirectory):
         path = self.DEST_DAVIS_ANNOTATIONS_PATH + subdirectory + '/'
-        
+
         if not os.path.exists(path):
             os.makedirs(path)
-    
+
     def get_images(self, subdirectory):
         image_files = []
         image_colors = []
-        
+
         path = self.SOURCE_DAVIS_ANNOTATIONS_PATH + subdirectory + '/'
         image_names = os.listdir(path)
         image_names.sort()
-        
+
         for image_name in image_names:
             image = Image.open(path + image_name)
             image_files.append(image)
@@ -68,14 +69,14 @@ class AnnotationsModifier:
             image = images[index]
             image_name = image_names[index]
             image.save(path + image_name)
-    
+
     def remove_color(self, image, color):
         pixdata = image.load()
         for y in range(image.size[1]):
             for x in range(image.size[0]):
                 if pixdata[x,y] == color:
                     pixdata[x,y] = self.BLACK
-        
+
     def recolor_images(self, images, colors, human_colors):
         return_images = []
 
@@ -88,9 +89,9 @@ class AnnotationsModifier:
                 if color != self.HUMAN_COLOR:
                     self.recolor_human(image, color)
             return_images.append(image)
-        
+
         return return_images
-    
+
     def recolor_human(self, image, color):
         pixdata = image.load()
         for y in range(image.size[1]):
@@ -105,7 +106,7 @@ class AnnotationsModifier:
         images = self.recolor_images(images, colors, human_colors)
 
         self.save_images(image_names, images, subdirectory)
-    
+
     def modify_bike_packing_annotations(self, subdirectory):
         human_colors = [self.GREEN]
         self.modify_annotations(subdirectory, human_colors)
@@ -323,6 +324,3 @@ class AnnotationsModifier:
 
 helper = AnnotationsModifier()
 helper.modify_all_annotations()
-
-
-
