@@ -7,9 +7,9 @@ import numpy as np
 
 class AnnotationsModifier:
     # folder where the annotations of the original DAVIS dataset are
-    SOURCE_DAVIS_ANNOTATIONS_PATH = './humanDAVIS/Annotations/'
+    SOURCE_DAVIS_ANNOTATIONS_PATH = './Annotations/'
     # folder where the converted annotations of the DAVIS dataset will be
-    DEST_DAVIS_ANNOTATIONS_PATH = './humanDAVIS/ConvertedAnnotations/'
+    DEST_DAVIS_ANNOTATIONS_PATH = './ConvertedAnnotations/'
 
     # colors in DAVIS pallete
     BLACK = 0
@@ -28,6 +28,9 @@ class AnnotationsModifier:
     def modify_all_annotations(self):
         subdirectories = os.listdir(self.SOURCE_DAVIS_ANNOTATIONS_PATH)
         subdirectories.sort()
+
+        print(subdirectories)
+        return
 
         for subdirectory in subdirectories:
             self.call_method(subdirectory)

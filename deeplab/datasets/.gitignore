@@ -1,0 +1,2 @@
+humanDAVIS/*
+!humanDAVIS/convert_davis_annotations_to_human.py
