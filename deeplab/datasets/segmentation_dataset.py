@@ -117,7 +117,7 @@ _MSCOCO_INFORMATION = DatasetDescriptor(
 )
 
 _HUMAN_DAVIS_SF_INFORMATION = DatasetDescriptor(
-    split_to_sizes={
+    splits_to_sizes={
         'train':2629, # num of samples in images/training
         'val':1187, # num of samples in images/validation
     },
