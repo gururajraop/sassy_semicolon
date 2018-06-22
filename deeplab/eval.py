@@ -44,7 +44,7 @@ flags.DEFINE_string('checkpoint_dir', None, 'Directory of model checkpoints.')
 flags.DEFINE_integer('eval_batch_size', 1,
                      'The number of images in each batch during evaluation.')
 
-flags.DEFINE_multi_integer('eval_crop_size', [16 * 40 + 1, 16 * 40 + 1],
+flags.DEFINE_multi_integer('eval_crop_size', [513, 513],
                            'Image crop size [height, width] for evaluation.')
 
 flags.DEFINE_integer('eval_interval_secs', 60 * 5,
