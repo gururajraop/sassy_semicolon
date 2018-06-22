@@ -1,4 +1,4 @@
 humanDAVIS/*
 humanDAVISsf/*
 !humanDAVIS/convert_davis_annotations_to_human.py
-!humanDAVIS/convert_to_single_frame_davis_dataset.py
+!humanDAVISsf/convert_to_single_frame_davis_dataset.py
