@@ -1,9 +1,5 @@
 import os
-import sys
-import imageio
-from scipy import ndimage
 from PIL import Image
-import numpy as np
 
 class AnnotationsModifier:
     # folder where the annotations of the original DAVIS dataset are
@@ -28,9 +24,6 @@ class AnnotationsModifier:
     def modify_all_annotations(self):
         subdirectories = os.listdir(self.SOURCE_DAVIS_ANNOTATIONS_PATH)
         subdirectories.sort()
-
-        print(subdirectories)
-        return
 
         for subdirectory in subdirectories:
             self.call_method(subdirectory)

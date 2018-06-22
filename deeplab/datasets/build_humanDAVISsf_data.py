@@ -13,27 +13,18 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Converts humanDAVIS data to TFRecord file format with Example protos.
+"""Converts single frame humanDAVIS data to TFRecord file format
 
-humanDAVIS dataset is expected to have the following directory structure:
+Use the following directory structure structure:
 
   + datasets
     - build_data.py
-    - build_humanDAVIS_data.py (current working directory).
-    + humanDAVIS
-      + JPEGImages
-      + Lists
-      + ConvertedAnnotations
+    - build_humanDAVISsf_data.py (current working directory).
+    + humanDAVISsf
+      + JPEGImages(containing originals)
+      + Annotations (containing ground truths (semantic segmentation annotations)
+      + ImageSets (containing text files for train/val splits)
       + tfrecord
-
-Image folder:
-  ./humanDAVIS/JPEGImages
-
-Semantic segmentation annotations:
-  ./humanDAVIS/Annotations
-
-list folder:
-  ./humanDAVIS/ImageSets
 
 This script converts data into sharded data files and save at tfrecord folder.
 
@@ -49,7 +40,7 @@ The Example proto contains the following fields:
   image/segmentation/class/format: semantic segmentation file format.
 """
 import math
-import os
+import os.path
 import sys
 import build_data
 import tensorflow as tf
@@ -57,24 +48,27 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 FLAGS.image_format = 'jpg'
 
+
 tf.app.flags.DEFINE_string('image_folder',
-                           './humanDAVIS/JPEGImages/480p/',
+                           './humanDAVISsf/JPEGImages/480p/',
                            'Folder containing images.')
 
 tf.app.flags.DEFINE_string(
     'semantic_segmentation_folder',
-    './humanDAVIS/Annotations',
+    './humanDAVISsf/Annotations',
     'Folder containing semantic segmentation annotations.')
 
 tf.app.flags.DEFINE_string(
     'list_folder',
-    './humanDAVIS/ImageSets',
+    './humanDAVISsf/ImageSets',
     'Folder containing lists for training and validation')
 
 tf.app.flags.DEFINE_string(
     'output_dir',
-    './humanDAVIS/tfrecord',
+    './humanDAVISsf/tfrecord',
     'Path to save converted SSTable of TensorFlow examples.')
+
+_NUM_SHARDS = 30
 
 
 def _convert_dataset(dataset_split):
@@ -88,32 +82,28 @@ def _convert_dataset(dataset_split):
   """
   dataset = os.path.basename(dataset_split)[:-4]
   sys.stdout.write('Processing ' + dataset)
-  subdirectories = [x.strip('\n') for x in open(dataset_split, 'r')]
-
-  _NUM_SHARDS = len(subdirectories)
+  filenames = [x.strip('\n') for x in open(dataset_split, 'r')]
+  num_images = len(filenames)
+  num_per_shard = int(math.ceil(num_images / float(_NUM_SHARDS)))
 
   image_reader = build_data.ImageReader('jpg', channels=3)
   label_reader = build_data.ImageReader('png', channels=1)
 
   for shard_id in range(_NUM_SHARDS):
-    subdirectory = subdirectories[shard_id]
-    image_names = os.listdir(FLAGS.image_folder +  subdirectory)
-    filenames = [subdirectory + '/' + image_name[:image_name.rindex('.')] for image_name in image_names]
-    filenames.sort()
-
     output_filename = os.path.join(
         FLAGS.output_dir,
         '%s-%05d-of-%05d.tfrecord' % (dataset, shard_id, _NUM_SHARDS))
     with tf.python_io.TFRecordWriter(output_filename) as tfrecord_writer:
-
-      for i in range(len(filenames)):
-        sys.stdout.write('\r>> Converting subdirectory %s shard %d' % (subdirectory, shard_id))
+      start_idx = shard_id * num_per_shard
+      end_idx = min((shard_id + 1) * num_per_shard, num_images)
+      for i in range(start_idx, end_idx):
+        sys.stdout.write('\r>> Converting image %d/%d shard %d' % (
+            i + 1, len(filenames), shard_id))
         sys.stdout.flush()
         # Read the image.
         image_filename = os.path.join(
             FLAGS.image_folder, filenames[i] + '.' + FLAGS.image_format)
         image_data = tf.gfile.FastGFile(image_filename, 'rb').read()
-
         height, width = image_reader.read_image_dims(image_data)
         # Read the semantic segmentation annotation.
         seg_filename = os.path.join(
