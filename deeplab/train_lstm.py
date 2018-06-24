@@ -196,7 +196,7 @@ def _build_deeplab(inputs_queue, outputs_to_num_classes, ignore_label):
       crop_size=FLAGS.train_crop_size,
       atrous_rates=FLAGS.atrous_rates,
       output_stride=FLAGS.output_stride)
-  outputs_to_scales_to_logits = model.multi_scale_logits(
+  outputs_to_scales_to_logits = model_lstm.multi_scale_logits(
       samples[common.IMAGE],
       model_options=model_options,
       image_pyramid=FLAGS.image_pyramid,
@@ -206,8 +206,8 @@ def _build_deeplab(inputs_queue, outputs_to_num_classes, ignore_label):
 
   # Add name to graph node so we can add to summary.
   output_type_dict = outputs_to_scales_to_logits[common.OUTPUT_TYPE]
-  output_type_dict[model.get_merged_logits_scope()] = tf.identity(
-      output_type_dict[model.get_merged_logits_scope()],
+  output_type_dict[model_lstm.get_merged_logits_scope()] = tf.identity(
+      output_type_dict[model_lstm.get_merged_logits_scope()],
       name=common.OUTPUT_TYPE)
 
   for output, num_classes in six.iteritems(outputs_to_num_classes):
@@ -248,7 +248,7 @@ def main(unused_argv):
 
   with tf.Graph().as_default() as graph:
     with tf.device(config.inputs_device()):
-      samples = input_generator.get(
+      samples = input_generator_lstm.get(
           dataset,
           FLAGS.train_crop_size,
           clone_batch_size,
@@ -336,7 +336,7 @@ def main(unused_argv):
       summaries.add(tf.summary.scalar('total_loss', total_loss))
 
       # Modify the gradients for biases and last layer variables.
-      last_layers = model.get_extra_layer_scopes(
+      last_layers = model_lstm.get_extra_layer_scopes(
           FLAGS.last_layers_contain_logits_only)
       grad_mult = train_utils.get_model_gradient_multipliers(
           last_layers, FLAGS.last_layer_gradient_multiplier)
