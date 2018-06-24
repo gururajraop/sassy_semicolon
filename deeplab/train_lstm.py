@@ -20,9 +20,9 @@ See model.py for more details and usage.
 import six
 import tensorflow as tf
 from deeplab import common
-from deeplab import model
+from deeplab import model_lstm
 from deeplab.datasets import segmentation_dataset
-from deeplab.utils import input_generator
+from deeplab.utils import input_generator_lstm
 from deeplab.utils import train_utils
 from deployment import model_deploy
 
