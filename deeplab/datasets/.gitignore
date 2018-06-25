@@ -1,4 +1,6 @@
 humanDAVIS/*
 humanDAVISsf/*
+blurredhumanDAVIS/*
 !humanDAVIS/convert_davis_annotations_to_human.py
 !humanDAVISsf/convert_to_single_frame_davis_dataset.py
+!blurredhumanDAVIS/convert_to_blurred_human_davis_dataset.py

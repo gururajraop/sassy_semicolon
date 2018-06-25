@@ -19,8 +19,8 @@ Use the following directory structure structure:
 
   + datasets
     - build_data.py
-    - build_humanDAVISsf_data.py (current working directory).
-    + humanDAVISsf
+    - build_blurredhumandavis_data.py (current working directory).
+    + blurredhumanDAVIS
       + JPEGImages(containing originals)
       + Annotations (containing ground truths (semantic segmentation annotations)
       + ImageSets (containing text files for train/val splits)
@@ -50,22 +50,22 @@ FLAGS.image_format = 'jpg'
 
 
 tf.app.flags.DEFINE_string('image_folder',
-                           './humanDAVISsf/JPEGImages/480p/',
+                           './blurredhumanDAVIS/JPEGImages/480p/',
                            'Folder containing images.')
 
 tf.app.flags.DEFINE_string(
     'semantic_segmentation_folder',
-    './humanDAVISsf/Annotations',
+    './blurredhumanDAVIS/Annotations',
     'Folder containing semantic segmentation annotations.')
 
 tf.app.flags.DEFINE_string(
     'list_folder',
-    './humanDAVISsf/ImageSets',
+    './blurredhumanDAVIS/ImageSets',
     'Folder containing lists for training and validation')
 
 tf.app.flags.DEFINE_string(
     'output_dir',
-    './humanDAVISsf/tfrecord',
+    './blurredhumanDAVIS/tfrecord',
     'Path to save converted SSTable of TensorFlow examples.')
 
 _NUM_SHARDS = 30
