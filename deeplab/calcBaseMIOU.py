@@ -117,11 +117,17 @@ def get_IoU(prediction, labelImage):
 
   TP = ((prediction == 15) & (label == 1)).sum()
   FP = ((prediction == 15) & (label != 1)).sum()
-  TN = ((prediction != 15) & (label == 1)).sum()
-  FN = ((prediction != 15) & (label != 1)).sum()
+  FN = ((prediction != 15) & (label == 1)).sum()
+  TN = ((prediction != 15) & (label != 1)).sum()
 
-  IoU_human = TP / (TP + FP + TN)
-  IoU_bg = FN / (FN + FP + TN)
+  if TP > 0 or FP > 0 or FN > 0: 
+    IoU_human = TP / (TP + FP + FN)
+  else:
+    IoU_human = 1
+  if TN > 0 or FN > 0 or FP > 0:
+    IoU_bg = TN / (FN + TN + FP)
+  else:
+    IoU_bg = 1
 
   IoU = (IoU_human + IoU_bg) / 2
 
@@ -143,7 +149,7 @@ print('model loaded successfully!')
 
 #%%
 
-for path, dirs, files in os.walk("./datasets/MSCOCO/SegmentedImages"):
+for path, dirs, files in os.walk("./datasets/MSCOCO/human_val"):
   IoU = []
   progress = 1
   total = len(files)
