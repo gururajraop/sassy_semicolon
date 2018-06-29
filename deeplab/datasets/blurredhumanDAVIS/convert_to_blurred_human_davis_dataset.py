@@ -17,12 +17,23 @@ class BlurredDatasetConverter:
 
     DEST_DAVIS_ANNOTATIONS_PATH = './Annotations/'
 
+    VAL_FOLDERS = './ImageSets/val.txt'
+
+    '''
+    Only blur folders for training
+    '''
     def blur_dataset(self):
         subdirectories = os.listdir(self.SOURCE_DAVIS_IMAGES_PATH)
         subdirectories.sort()
 
+        fd = open(self.VAL_FOLDERS, 'r')
+        val_subdirectories = fd.read()
+        val_subdirectories = val_subdirectories.split('\n')
+
         for subdirectory in subdirectories:
-            self.blur_images(subdirectory)
+            if subdirectory not in val_subdirectories:
+                self.blur_images(subdirectory)
+                print("Finished " + subdirectory)
 
     def get_images(self, subdirectory):
         input_images = []
@@ -50,12 +61,16 @@ class BlurredDatasetConverter:
 
     def create_dest_folder(self, subdirectory):
         path = self.DEST_DAVIS_IMAGES_PATH + subdirectory + '/'
+        path2 = self.DEST_DAVIS_ANNOTATIONS_PATH + subdirectory + "/"
 
         if not os.path.exists(path):
             os.makedirs(path)
 
+        if not os.path.exists(path2):
+            os.makedirs(path2)
+
     def blur_images(self, subdirectory):
-        #self.create_dest_folder(subdirectory)
+        self.create_dest_folder(subdirectory)
         input_images, annotations, image_names, annotations_image_names = self.get_images(subdirectory)
         blurred_images = [input_images[0]]
 
@@ -67,15 +82,14 @@ class BlurredDatasetConverter:
             blurred_image = self.unblur_mask(blurred_image, image, previous_mask)
             blurred_images.append(blurred_image)
 
-        self.save_images(blurred_images, image_names, self.DEST_DAVIS_IMAGES_PATH, subdirectory)
-        self.save_images(annotations, annotations_image_names, self.DEST_DAVIS_ANNOTATIONS_PATH, subdirectory)
+        self.save_images(blurred_images, image_names, self.DEST_DAVIS_IMAGES_PATH + subdirectory + "/")
+        self.save_images(annotations, annotations_image_names, self.DEST_DAVIS_ANNOTATIONS_PATH + subdirectory + "/")
 
-    def save_images(self, blurred_images, image_names, path, subdirectory):
+    def save_images(self, blurred_images, image_names, path):
 
         for index in range(len(blurred_images)):
             image = blurred_images[index]
             image_name = image_names[index]
-            image_name = subdirectory + '-' + image_name
             image.save(path + image_name)
 
     def unblur_mask(self, blurred_image, image, mask):
