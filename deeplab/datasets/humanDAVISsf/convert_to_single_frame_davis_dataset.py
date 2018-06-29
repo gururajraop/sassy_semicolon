@@ -43,6 +43,8 @@ class DatasetConverter:
             new_image_name = subdirectory + '-' + image_name
             image.save(dest_path + new_image_name)
 
+        print("Finished " + subdirectory)
+
     def generate_splits(self):
         self.generate_split(self.TRAIN)
         self.generate_split(self.VAL)
@@ -67,5 +69,5 @@ class DatasetConverter:
 
 
 helper = DatasetConverter()
-#helper.convert_dataset()
-helper.generate_splits()
+helper.convert_dataset()
+#helper.generate_splits()
