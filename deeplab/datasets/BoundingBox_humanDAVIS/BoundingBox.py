@@ -77,11 +77,15 @@ class DeepLabModel(object):
       resized_image: RGB image resized from original input image.
       seg_map: Segmentation map of `resized_image`.
     """
-    #if (BB is None):
-    #  BB = [(0,0), org_image.size]
 
-    image = org_image#.crop((BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
+    # Do not crop for the first frame.
+    if (BB is None):
+      BB = [(0,0), org_image.size]
 
+    # Crop the input image based on previous frames' BB
+    image = org_image.crop((BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
+
+    # Get the predictions using deeplab
     width, height = image.size
     resize_ratio = 1.0 * self.INPUT_SIZE / max(width, height)
     target_size = (int(resize_ratio * width), int(resize_ratio * height))
@@ -91,10 +95,13 @@ class DeepLabModel(object):
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
     seg_map = batch_seg_map[0]
 
+    # Convert the prediction to image type
     pred = Image.fromarray(seg_map.astype(np.int32))
+    # Get the BB for the first frame
     if (BB is None) or (pred_size is None):
       new_BB = self.getBoundingBox(pred)
       resized_pred = pred
+    # Get the BB for the current prediction
     else:
       pred = pred.resize(pred_size)
       cropped_pred = pred.crop((BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
