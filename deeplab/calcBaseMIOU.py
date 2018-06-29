@@ -112,40 +112,26 @@ def label_to_color_image(label):
 
   return colormap[label]
 
+def get_IoU(prediction, labelImage):
+  label = np.array(labelImage)
 
-def vis_segmentation(image, seg_map):
-  """Visualizes input image, segmentation map and overlay view."""
-  plt.figure(figsize=(15, 5))
-  grid_spec = gridspec.GridSpec(1, 4, width_ratios=[6, 6, 6, 1])
+  TP = ((prediction == 15) & (label == 1)).sum()
+  FP = ((prediction == 15) & (label != 1)).sum()
+  FN = ((prediction != 15) & (label == 1)).sum()
+  TN = ((prediction != 15) & (label != 1)).sum()
 
-  plt.subplot(grid_spec[0])
-  plt.imshow(image)
-  plt.axis('off')
-  plt.title('input image')
+  if TP > 0 or FP > 0 or FN > 0: 
+    IoU_human = TP / (TP + FP + FN)
+  else:
+    IoU_human = 1
+  if TN > 0 or FN > 0 or FP > 0:
+    IoU_bg = TN / (FN + TN + FP)
+  else:
+    IoU_bg = 1
 
-  plt.subplot(grid_spec[1])
-  seg_image = label_to_color_image(seg_map).astype(np.uint8)
-  plt.imshow(seg_image)
-  plt.axis('off')
-  plt.title('segmentation map')
+  IoU = (IoU_human + IoU_bg) / 2
 
-  plt.subplot(grid_spec[2])
-  plt.imshow(image)
-  plt.imshow(seg_image, alpha=0.7)
-  plt.axis('off')
-  plt.title('segmentation overlay')
-
-  unique_labels = np.unique(seg_map)
-  ax = plt.subplot(grid_spec[3])
-  plt.imshow(
-      FULL_COLOR_MAP[unique_labels].astype(np.uint8), interpolation='nearest')
-  ax.yaxis.tick_right()
-  plt.yticks(range(len(unique_labels)), LABEL_NAMES[unique_labels])
-  plt.xticks([], [])
-  ax.tick_params(width=0.0)
-  plt.grid('off')
-  plt.show()
-
+  return IoU
 
 LABEL_NAMES = np.asarray([
     'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
@@ -163,13 +149,26 @@ print('model loaded successfully!')
 
 #%%
 
-for path, dirs, files in os.walk("./datasets/MSCOCO/Images"):
-    for filename in files[0:5]:
-        image = Image.open("./datasets/MSCOCO/Images/" + filename)
-        print("loading ./datasets/MSCOCO/Images/" + filename)
-        image.getcolors()
-        resized_im, seg_map = MODEL.run(image)
-        
-        #vis_segmentation(resized_im, seg_map)
-        
-        #%%
+for path, dirs, files in os.walk("./datasets/MSCOCO/human_val"):
+  IoU = []
+  progress = 1
+  total = len(files)
+  for segFile in files:
+    imgFile = segFile.replace("png", "jpg")
+    image = Image.open("./datasets/MSCOCO/Images/" + imgFile)
+    image.getcolors()
+    resized_im, seg_map = MODEL.run(image)
+
+    label = Image.open("./datasets/MSCOCO/SegmentedImages/" + segFile)
+    resized_label = label.resize(resized_im.size)
+    IoU.append(get_IoU(seg_map, resized_label))
+
+    if (progress % 100 == 0):
+      current_mIOU = np.average(IoU)
+      print("Evaluation: {}/{} , mIOU: {}".format(progress, total, current_mIOU))
+
+    progress += 1
+
+  mIoU = np.average(IoU)
+  print("mIOU :", mIoU)
+#%%
