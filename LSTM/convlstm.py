@@ -3,8 +3,8 @@ import tensorflow as tf
 
 from tensorflow.contrib.rnn.python.ops.rnn_cell import Conv2DLSTMCell
 
-batch = 1
-sequence = 2
+batch = 12
+sequence = 5
 H = 100
 W = 100
 C = 3

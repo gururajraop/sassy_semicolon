@@ -3,8 +3,8 @@ import tensorflow as tf
 
 from tensorflow.contrib.rnn.python.ops.rnn_cell import Conv2DLSTMCell
 
-batch = 1
-sequence = 2
+batch = 12
+sequence = 5
 H = 100
 W = 100
 C = 3
@@ -35,7 +35,7 @@ def fake_network(inp):
     assert inp.shape == (batch * sequence, H, W, C)
 
     # kernel size = 3, stride = 2
-    inp2 = conv2d(inp, C2, ks=3, s=2)
+    inp2 = conv2d(inp, C, ks=3, s=2)
 
     return inp2
 
@@ -44,13 +44,14 @@ input_ = tf.placeholder(
     "input_images")
 
 out = fake_network(input_)
+out_shape = out.get_shape().as_list()
 
-input_shape = [out.shape[1], out.shape[2], out.shape[3]]
+input_shape = [out_shape[1], out_shape[2], out_shape[3]]
 out = tf.reshape(out, [batch, sequence] + input_shape)
 
 # Returns again just 1 channel, in that case we just try to fuse predictions coming from "fake_network"
 cell = Conv2DLSTMCell(input_shape=input_shape,
-                      output_channels=out.shape[3],
+                      output_channels=out_shape[3],
                       kernel_shape=[5, 5],
                       use_bias=True,
                       name='conv_2d_lstm_cell_1')
