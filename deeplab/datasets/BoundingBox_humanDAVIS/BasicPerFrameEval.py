@@ -102,6 +102,7 @@ IoU = []
 for val_case in val_set:
   class_IoU = []
   for _, _, files in os.walk("./Annotations/" + val_case):
+    files.sort()
     for segFile in files:
       imgFile = segFile.replace("png", "jpg")
       image = Image.open("./JPEGImages/480p/" + val_case + "/" + imgFile)

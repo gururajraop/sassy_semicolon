@@ -159,6 +159,7 @@ import time
 total_time = 0
 for path, dirs, files in os.walk("./JPEGImages/480p/breakdance/"):
 #for path, dirs, files in os.walk("./JPEGImages/480p/breakdance-flare/"):
+    files.sort()
     for filename in files:
         image = Image.open(path + "/" + filename)
         start_time = time.time()
