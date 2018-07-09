@@ -595,7 +595,7 @@ def refine_by_decoder(features,
             seq_length = tf.Dimension(3)
             
             s = decoder_features.shape
-            batch_size = tf.Dimension(s[0] / seq_length)
+            batch_size = tf.Dimension(s[0].value / seq_length.value)
             sequence = tf.reshape(decoder_features, [batch_size, seq_length, s[1], s[2], s[3]])
 
             # Convolutional LSTM Layer

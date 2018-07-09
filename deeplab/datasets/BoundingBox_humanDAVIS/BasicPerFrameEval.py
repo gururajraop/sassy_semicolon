@@ -64,6 +64,7 @@ class DeepLabModel(object):
         self.OUTPUT_TENSOR_NAME,
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
     seg_map = batch_seg_map[0]
+
     return resized_image, seg_map
 
 
@@ -104,11 +105,11 @@ for val_case in val_set:
     for segFile in files:
       imgFile = segFile.replace("png", "jpg")
       image = Image.open("./JPEGImages/480p/" + val_case + "/" + imgFile)
-      image.getcolors()
       resized_im, seg_map = MODEL.run(image)
 
       label = Image.open("./Annotations/" + val_case + "/" + segFile)
       resized_label = label.resize(resized_im.size)
+
       iou_val = get_IoU(seg_map, resized_label)
       class_IoU.append(iou_val)
       #IoU.append(iou_val)

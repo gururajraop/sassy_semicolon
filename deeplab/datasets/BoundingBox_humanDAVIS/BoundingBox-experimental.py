@@ -4,11 +4,9 @@ from io import BytesIO
 import tarfile
 import tempfile
 from six.moves import urllib
-import time
 
 import numpy as np
 from PIL import Image
-from PIL import ImageFilter
 
 import tensorflow as tf
 
@@ -24,6 +22,7 @@ class DeepLabModel(object):
   OUTPUT_TENSOR_NAME = 'SemanticPredictions:0'
   INPUT_SIZE = 513
   FROZEN_GRAPH_NAME = 'frozen_inference_graph'
+  BB_EXTRA = 10
 
   def __init__(self, tarball_path):
     """Creates and loads pretrained deeplab model."""
@@ -48,25 +47,27 @@ class DeepLabModel(object):
 
     self.sess = tf.Session(graph=self.graph)
 
-  def blurImage(self, image, mask):
-    blurred_image = image.filter(ImageFilter.GaussianBlur(radius=3))
-    blurred_image = self.unblur_mask(blurred_image, image, mask)
+  def getBoundingBox(self, image):
+    u = np.where(np.array(image) == 1)
+    #u = np.where(image == 1)
+    if len(u[1]) != 0:
+      x_min = min(np.min(u[1]) - self.BB_EXTRA, 0)
+      x_max = min(np.max(u[1]) + self.BB_EXTRA, image.size[1])
+    else:
+      x_min = 0
+      x_max = image.size[1]
 
-    return blurred_image
+    if len(u[0]) != 0:
+      y_min = min(np.min(u[0]) - self.BB_EXTRA, 0)
+      y_max = min(np.max(u[0]) + self.BB_EXTRA, image.size[0])
+    else:
+      y_min = 0
+      y_max = image.size[0]
 
-  def unblur_mask(self, blurred_image, image, mask):
-    bi_data = blurred_image.load()
-    i_data = image.load()
-    m_data = mask.load()
+    xy_coor = [(x_min, y_min), (x_max, y_max)]
+    return xy_coor
 
-    for y in range(image.size[1]):
-      for x in range(image.size[0]):
-        if m_data[x, y] == 1:
-          bi_data[x, y] = i_data[x, y]
-
-    return blurred_image
-
-  def run(self, org_image, mask):
+  def run(self, org_image, BB, mode, pred_size, frame_id):
     """Runs inference on a single image.
 
     Args:
@@ -77,19 +78,18 @@ class DeepLabModel(object):
       seg_map: Segmentation map of `resized_image`.
     """
 
-    # Do not blur for first frame
-    if (mask):
-      image = self.blurImage(org_image, mask)
-    else:
-      image = org_image
+    # Do not crop for the first frame.
+    if (BB is None) or frame_id == 1:
+      BB = [(0,0), org_image.size]
+
+    # Crop the input image based on previous frames' BB
+    image = org_image.crop((BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
 
     # Get the predictions using deeplab
     width, height = image.size
     resize_ratio = 1.0 * self.INPUT_SIZE / max(width, height)
     target_size = (int(resize_ratio * width), int(resize_ratio * height))
     resized_image = image.convert('RGB').resize(target_size, Image.ANTIALIAS)
-
-
     batch_seg_map = self.sess.run(
         self.OUTPUT_TENSOR_NAME,
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
@@ -98,7 +98,28 @@ class DeepLabModel(object):
     # Convert the prediction to image type
     pred = Image.fromarray(seg_map.astype(np.int32))
 
-    return pred.resize(image.size)
+    # Get the BB for the first frame
+    if (BB is None) or (pred_size is None) or (frame_id == 1):
+      # pred_BB = self.getBoundingBox(pred)
+      print(pred.size)
+      resized_pred = pred.resize(org_image.size)
+      new_BB = self.getBoundingBox(resized_pred)
+
+    # Get the BB for the second frame
+    elif (frame_id == 2):
+      print(pred.size)
+      new_BB = BB
+      resized_pred = pred
+      pass
+
+    # Get the BB for the susequent frames
+    else:
+      pred = pred.resize((pred_BB[1][0] - pred_BB[0][0], pred_BB[1][1]-pred_BB[0][1]))
+      resized_pred = Image.new(mode, org_image.size)
+      resized_pred.paste(cropped_pred, (BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
+      new_BB = self.getBoundingBox(resized_pred)
+
+    return resized_pred, resized_pred.size, new_BB
 
 
 def get_IoU(predictionImage, labelImage):
@@ -125,43 +146,37 @@ def get_IoU(predictionImage, labelImage):
   return IoU
 
 #%%
-RESULTS = './Results/'
-MODEL = DeepLabModel("../../train_DAVIS_Blurred_FrozenGraph.tar.gz")
+
+MODEL = DeepLabModel("../../train_COCO_FrozenGraph4.tar.gz")
 print('model loaded successfully!')
 
 #%%
 
-val_set = open("../BoundingBox_humanDAVIS/ImageSets/val.txt", "r").read().split('\n')
+val_set = open("./ImageSets/val.txt", "r").read().split('\n')
 
 IoU = []
-start = time.time()
-num = 0
 for val_case in val_set:
   class_IoU = []
-  mask = None
-  result_folder = RESULTS + val_case + '/'
 
-  if not os.path.exists(result_folder):
-    os.makedirs(result_folder)
-
-  for _, _, files in os.walk("../BoundingBox_humanDAVIS/Annotations/" + val_case):
-    files.sort()
+  # Initialize some values
+  frame_id = 1
+  BB = None
+  pred_size = None
+  for _, _, files in os.walk("./Annotations/" + val_case):
     for segFile in files:
       imgFile = segFile.replace("png", "jpg")
-      image = Image.open("../BoundingBox_humanDAVIS/JPEGImages/480p/" + val_case + "/" + imgFile)
-      label = Image.open("../BoundingBox_humanDAVIS/Annotations/" + val_case + "/" + segFile)
+      image = Image.open("./JPEGImages/480p/" + val_case + "/" + imgFile)
+      label = Image.open("./Annotations/" + val_case + "/" + segFile)
       image.getcolors()
+      seg_map, pred_size, BB = MODEL.run(image, BB, label.mode, pred_size, frame_id)
 
-      mask = MODEL.run(image, mask)
-      colors = mask.getcolors
-      mask.save(result_folder + segFile)
+      resized_label = label.resize(pred_size)
 
-      resized_label = label.resize(mask.size)
-
-      iou_val = get_IoU(mask, resized_label)
+      iou_val = get_IoU(seg_map, resized_label)
       class_IoU.append(iou_val)
       #IoU.append(iou_val)
-      num += 1
+
+      frame_id += 1
 
   current_mIOU = np.average(class_IoU)
   IoU.append(current_mIOU)
@@ -169,7 +184,4 @@ for val_case in val_set:
 
 mIoU = np.average(IoU)
 print("mIOU :", mIoU)
-
-end = time.time()
-print("Total time:", (end-start)/num)
 #%%

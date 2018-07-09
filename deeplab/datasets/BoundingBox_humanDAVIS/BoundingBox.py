@@ -4,6 +4,7 @@ from io import BytesIO
 import tarfile
 import tempfile
 from six.moves import urllib
+import time
 
 import numpy as np
 from PIL import Image
@@ -22,7 +23,7 @@ class DeepLabModel(object):
   OUTPUT_TENSOR_NAME = 'SemanticPredictions:0'
   INPUT_SIZE = 513
   FROZEN_GRAPH_NAME = 'frozen_inference_graph'
-  BB_EXTRA = 10
+  BB_EXTRA = 5
 
   def __init__(self, tarball_path):
     """Creates and loads pretrained deeplab model."""
@@ -145,6 +146,9 @@ print('model loaded successfully!')
 val_set = open("./ImageSets/val.txt", "r").read().split('\n')
 
 IoU = []
+start = time.time()
+num = 0
+
 for val_case in val_set:
   class_IoU = []
   BB = None
@@ -162,11 +166,15 @@ for val_case in val_set:
       iou_val = get_IoU(seg_map, resized_label)
       class_IoU.append(iou_val)
       #IoU.append(iou_val)
+      num += 1
 
   current_mIOU = np.average(class_IoU)
   IoU.append(current_mIOU)
   print("Evaluation: class:{} , mIOU: {}".format(val_case, current_mIOU))
 
+end = time.time()
+
 mIoU = np.average(IoU)
 print("mIOU :", mIoU)
+print("Total time taken:", (end-start)/num)
 #%%
