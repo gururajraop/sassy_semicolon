@@ -58,22 +58,22 @@ FLAGS = tf.app.flags.FLAGS
 FLAGS.image_format = 'jpg'
 
 tf.app.flags.DEFINE_string('image_folder',
-                           './humanDAVIS/JPEGImages/480p/',
+                           './BoundingBox_humanDAVIS/JPEGImages/480p/',
                            'Folder containing images.')
 
 tf.app.flags.DEFINE_string(
     'semantic_segmentation_folder',
-    './humanDAVIS/Annotations',
+    './BoundingBox_humanDAVIS/Annotations',
     'Folder containing semantic segmentation annotations.')
 
 tf.app.flags.DEFINE_string(
     'list_folder',
-    './humanDAVIS/ImageSets',
+    './BoundingBox_humanDAVIS/ImageSets',
     'Folder containing lists for training and validation')
 
 tf.app.flags.DEFINE_string(
     'output_dir',
-    './humanDAVIS/tfrecord',
+    './BoundingBox_humanDAVIS/tfrecord',
     'Path to save converted SSTable of TensorFlow examples.')
 
 

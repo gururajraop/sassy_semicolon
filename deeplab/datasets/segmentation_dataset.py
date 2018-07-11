@@ -125,11 +125,21 @@ _HUMAN_DAVIS_SF_INFORMATION = DatasetDescriptor(
     ignore_label=255,
 )
 
+_HUMAN_DAVIS_INFORMATION = DatasetDescriptor(
+    splits_to_sizes={
+        'train':2629, # num of samples in images/training
+        'val':1187, # num of samples in images/validation
+    },
+    num_classes=2,
+    ignore_label=255,
+)
+
 _DATASETS_INFORMATION = {
     'cityscapes': _CITYSCAPES_INFORMATION,
     'pascal_voc_seg': _PASCAL_VOC_SEG_INFORMATION,
     'ade20k': _ADE20K_INFORMATION,
     'mscoco': _MSCOCO_INFORMATION,
+    'humandavis': _HUMAN_DAVIS_INFORMATION,
     'humandavissf': _HUMAN_DAVIS_SF_INFORMATION,
 }
 
