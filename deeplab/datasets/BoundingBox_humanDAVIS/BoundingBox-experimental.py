@@ -51,18 +51,18 @@ class DeepLabModel(object):
     u = np.where(np.array(image) == 1)
     #u = np.where(image == 1)
     if len(u[1]) != 0:
-      x_min = min(np.min(u[1]) - self.BB_EXTRA, 0)
-      x_max = min(np.max(u[1]) + self.BB_EXTRA, image.size[1])
+      x_min = max(np.min(u[1]) - self.BB_EXTRA, 0)
+      x_max = min(np.max(u[1]) + self.BB_EXTRA, image.size[0])
     else:
       x_min = 0
-      x_max = image.size[1]
+      x_max = image.size[0]
 
     if len(u[0]) != 0:
-      y_min = min(np.min(u[0]) - self.BB_EXTRA, 0)
-      y_max = min(np.max(u[0]) + self.BB_EXTRA, image.size[0])
+      y_min = max(np.min(u[0]) - self.BB_EXTRA, 0)
+      y_max = min(np.max(u[0]) + self.BB_EXTRA, image.size[1])
     else:
       y_min = 0
-      y_max = image.size[0]
+      y_max = image.size[1]
 
     xy_coor = [(x_min, y_min), (x_max, y_max)]
     return xy_coor
@@ -79,12 +79,19 @@ class DeepLabModel(object):
     """
 
     # Crop the input image based on previous frames' BB
+    if (BB[0][0] == BB[1][0]):
+        BB[0][0] = 0
+        BB[1][0] = org_image.size[0]
+    if (BB[0][1] == BB[1][1]):
+        BB[0][1] = 0
+        BB[1][1] = org_image.size[1]
+
     cropped_image = org_image.crop((BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
 
     # Get the predictions using deeplab
     width, height = cropped_image.size
     resize_ratio = 1.0 * self.INPUT_SIZE / max(width, height)
-    target_size = (int(resize_ratio * width), int(resize_ratio * height))
+    target_size = (max(int(resize_ratio * width), 1), max(int(resize_ratio * height), 1))
     resized_image = cropped_image.convert('RGB').resize(target_size, Image.ANTIALIAS)
     batch_seg_map = self.sess.run(
         self.OUTPUT_TENSOR_NAME,
@@ -121,14 +128,14 @@ def get_IoU(predictionImage, labelImage):
     IoU_bg = 1
 
   #IoU = (IoU_human + IoU_bg) / 2
-  IoU = (IoU_human + IoU_bg) / 2
+  IoU = ((0.5 * IoU_human) + (1.5 * IoU_bg)) / 2
 
   return IoU
 
 #%%
 
 #MODEL = DeepLabModel("../../train_COCO_FrozenGraph4.tar.gz")
-MODEL = DeepLabModel("../../train_humanDAVISsf_15000Steps_BatchSize3.tar.gz")
+MODEL = DeepLabModel("../../train_DAVIS_FrozenGraph.tar.gz")
 print('model loaded successfully!')
 
 #%%

@@ -121,14 +121,14 @@ def getBoundingBox(image):
     #u = np.where(image == 1)
     if len(u[1]) != 0:
       x_min = max(np.min(u[1]) - BB_EXTRA, 0)
-      x_max = min(np.max(u[1]) + BB_EXTRA, image.size[0])
+      x_max = max(np.max(u[1]) + BB_EXTRA, 0)#image.size[1])
     else:
       x_min = 0
       x_max = image.size[1]
 
     if len(u[0]) != 0:
       y_min = max(np.min(u[0]) - BB_EXTRA, 0)
-      y_max = min(np.max(u[0]) + BB_EXTRA, image.size[1])
+      y_max = min(np.max(u[0]) + BB_EXTRA, image.size[0])
     else:
       y_min = 0
       y_max = image.size[0]

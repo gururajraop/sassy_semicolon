@@ -53,17 +53,17 @@ class DeepLabModel(object):
     #u = np.where(image == 1)
     if len(u[1]) != 0:
       x_min = min(np.min(u[1]) - self.BB_EXTRA, 0)
-      x_max = min(np.max(u[1]) + self.BB_EXTRA, image.size[1])
+      x_max = min(np.max(u[1]) + self.BB_EXTRA, image.size[0])
     else:
       x_min = 0
-      x_max = image.size[1]
+      x_max = image.size[0]
 
     if len(u[0]) != 0:
       y_min = min(np.min(u[0]) - self.BB_EXTRA, 0)
-      y_max = min(np.max(u[0]) + self.BB_EXTRA, image.size[0])
+      y_max = min(np.max(u[0]) + self.BB_EXTRA, image.size[1])
     else:
       y_min = 0
-      y_max = image.size[0]
+      y_max = image.size[1]
 
     xy_coor = [(x_min, y_min), (x_max, y_max)]
     return xy_coor
