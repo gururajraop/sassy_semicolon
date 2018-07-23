@@ -165,25 +165,30 @@ print('model loaded successfully!')
 val_set = open("./ImageSets/val.txt", "r").read().split('\n')
 
 IoU = []
+# Go through all the videos of the validation set
 for val_case in val_set:
   class_IoU = []
 
   # Initialize some values
   frame_id = 1
-  for _, _, files in os.walk("./Annotations/" + val_case):
+  for _, _, files in os.walk("./JPEGImages/480p/" + val_case):
     files.sort()
-    for segFile in files:
-      imgFile = segFile.replace("png", "jpg")
+    for imgFile in files:
       image = Image.open("./JPEGImages/480p/" + val_case + "/" + imgFile)
-      label = Image.open("./Annotations/" + val_case + "/" + segFile)
 
+      # Get the ground truth for the first frame and generated Bounding-Box using that
+      # This is done only for first frame and not for any other subsequent frames
       if frame_id == 1:
+        segFile = imgFile.replace("png", "jpg")
+        label = Image.open("./Annotations/" + val_case + "/" + segFile)
         BB = MODEL.getBoundingBox(label.resize(image.size))
 
+      # Run the forward prediciton and obtain the prediction and BB for the current frame
       pred, BB = MODEL.run(image, BB, label.mode)
 
       resized_label = label.resize(pred.size)
 
+      # Calculate the mIoU for the frame
       iou_val = get_IoU(pred, resized_label)
       class_IoU.append(iou_val)
       #IoU.append(iou_val)
@@ -192,8 +197,9 @@ for val_case in val_set:
 
   current_mIOU = np.average(class_IoU)
   IoU.append(current_mIOU)
-  print("Evaluation: class:{} , mIOU: {}".format(val_case, current_mIOU))
+  print("Evaluation: class:{}, mIOU: {}".format(val_case, current_mIOU))
 
+# Get the final mIoU for all the vidoes in the val set
 mIoU = np.average(IoU)
 print("mIOU :", mIoU)
 #%%
