@@ -28,7 +28,7 @@ class DeepLabModel(object):
   OUTPUT_TENSOR_NAME = 'SemanticPredictions:0'
   INPUT_SIZE = 513
   FROZEN_GRAPH_NAME = 'frozen_inference_graph'
-  BB_EXTRA = 25
+  BB_EXTRA = 10
 
   def __init__(self, tarball_path):
     """Creates and loads pretrained deeplab model."""

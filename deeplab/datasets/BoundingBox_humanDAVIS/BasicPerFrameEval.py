@@ -69,7 +69,7 @@ class DeepLabModel(object):
 
 
 def get_IoU(prediction, labelImage):
-  label = np.array(labelImage)
+  label = np.asarray(labelImage)
 
   TP = ((prediction == 1) & (label == 1)).sum()
   FP = ((prediction == 1) & (label != 1)).sum()

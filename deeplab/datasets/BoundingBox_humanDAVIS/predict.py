@@ -152,7 +152,8 @@ FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
 
 #MODEL = DeepLabModel("../../train_COCO_FrozenGraph4.tar.gz")
 #MODEL = DeepLabModel("../../train_DAVIS_Blurred_FrozenGraph.tar.gz")
-MODEL = DeepLabModel("../../train_DAVIS_FrozenGraph.tar.gz")
+MODEL = DeepLabModel("../../train_DAVIS_BlurredFirstFrame_FrozenGraph.tar.gz")
+#MODEL = DeepLabModel("../../train_DAVIS_FrozenGraph.tar.gz")
 print('model loaded successfully!')
 
 #%%

@@ -4,6 +4,7 @@ from io import BytesIO
 import tarfile
 import tempfile
 from six.moves import urllib
+import time
 
 #from matplotlib import gridspec
 #from matplotlib import pyplot as plt
@@ -98,9 +99,11 @@ class DeepLabModel(object):
     resize_ratio = 1.0 * self.INPUT_SIZE / max(width, height)
     target_size = (max(int(resize_ratio * width), 1), max(int(resize_ratio * height), 1))
     resized_image = cropped_image.convert('RGB').resize(target_size, Image.ANTIALIAS)
+    start = time.time()
     batch_seg_map = self.sess.run(
         self.OUTPUT_TENSOR_NAME,
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
+    deeplab_time = time.time() - start
     seg_map = batch_seg_map[0]
 
     # Convert the prediction to image type
@@ -114,7 +117,7 @@ class DeepLabModel(object):
     resized_pred.paste(pred, (BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
     new_BB = self.getBoundingBox(resized_pred)
 
-    return resized_pred, new_BB
+    return resized_pred, new_BB, deeplab_time
 
 
 
@@ -201,12 +204,13 @@ MODEL = DeepLabModel("../../train_DAVIS_FrozenGraph.tar.gz")
 print('model loaded successfully!')
 
 #%%
-import time
 total_time = 0
+deeplab_time = 0
 
 val_set = open("./ImageSets/val.txt", "r").read().split('\n')
 
 for val_case in val_set:
+  print(val_case)
   for path, dirs, files in os.walk("./JPEGImages-copy/480p/" + val_case):
   #for path, dirs, files in os.walk("./JPEGImages/480p/breakdance-flare/"):
     files.sort()
@@ -220,7 +224,8 @@ for val_case in val_set:
           BB = MODEL.getBoundingBox(label.resize(image.size))
 
         start_time = time.time()
-        seg_map, BB = MODEL.run(image, BB, image.mode)
+        seg_map, BB, model_time = MODEL.run(image, BB, image.mode)
+        deeplab_time += model_time
         total_time += time.time() - start_time
         #seg_image = label_to_color_image(seg_map).astype(np.uint8)
         #seg_image = Image.fromarray(seg_image)
@@ -242,8 +247,8 @@ for val_case in val_set:
 
         frame_id += 1
         
+print(deeplab_time)
 print(total_time)
-print(total_time / 100)
         
 #        #%%
 #gd = MODEL.sess.graph_def
