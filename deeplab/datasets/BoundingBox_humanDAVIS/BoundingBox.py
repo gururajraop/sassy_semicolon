@@ -131,8 +131,8 @@ def get_IoU(predictionImage, labelImage):
   else:
     IoU_bg = 1
 
-  #IoU = (IoU_human + IoU_bg) / 2
-  IoU = ((0.5 * IoU_human) + (1.5 * IoU_bg)) / 2
+  IoU = (IoU_human + IoU_bg) / 2
+  #IoU = ((0.5 * IoU_human) + (1.5 * IoU_bg)) / 2
 
   return IoU
 

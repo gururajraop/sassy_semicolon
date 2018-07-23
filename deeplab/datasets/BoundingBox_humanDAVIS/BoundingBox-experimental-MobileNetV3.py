@@ -113,7 +113,7 @@ class DeepLabModel(object):
     pred = Image.fromarray(seg_map.astype(np.int32)).resize(cropped_image.size)
 
     # Pad zeros in the cropped regions to get the same shape as target label
-    new_arr = np.zeros((image.size[1], image.size[0]))
+    new_arr = np.zeros((org_image.size[1], org_image.size[0]))
     resized_pred = Image.fromarray(new_arr.astype(np.int32))
     resized_pred.paste(pred, (BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
     new_BB = self.getBoundingBox(resized_pred)
