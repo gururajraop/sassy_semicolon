@@ -11,6 +11,7 @@ import time
 import numpy as np
 from PIL import Image
 from PIL import ImageDraw
+import time
 
 
 import tensorflow as tf
@@ -27,8 +28,8 @@ class DeepLabModel(object):
 #  OUTPUT_TENSOR_NAME = 'decoder/decoder_conv1_pointwise/Relu:0'
   OUTPUT_TENSOR_NAME = 'SemanticPredictions:0'
   INPUT_SIZE = 513
-  BB_EXTRA = 10
   FROZEN_GRAPH_NAME = 'frozen_inference_graph'
+  BB_EXTRA = 10
 
   def __init__(self, tarball_path):
     """Creates and loads pretrained deeplab model."""
@@ -73,7 +74,7 @@ class DeepLabModel(object):
     xy_coor = [(x_min, y_min), (x_max, y_max)]
     return xy_coor
 
-  def run(self, org_image, BB, mode):
+  def run(self, image, BB, filename):
     """Runs inference on a single image.
 
     Args:
@@ -87,38 +88,38 @@ class DeepLabModel(object):
     # Crop the input image based on previous frames' BB
     if (BB[0][0] == BB[1][0]):
         BB[0][0] = 0
-        BB[1][0] = org_image.size[0]
+        BB[1][0] = image.size[0]
     if (BB[0][1] == BB[1][1]):
         BB[0][1] = 0
-        BB[1][1] = org_image.size[1]
+        BB[1][1] = image.size[1]
 
-    cropped_image = org_image.crop((BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
+    cropped_image = image.crop((BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
+    #image.save("./predictions_breakSF/" + filename + "image" + ".png")
+    #cropped_image.save("./predictions_breakSF/" + filename + "cropped_image" + ".png")
 
-    # Get the predictions using deeplab
     width, height = cropped_image.size
     resize_ratio = 1.0 * self.INPUT_SIZE / max(width, height)
-    target_size = (max(int(resize_ratio * width), 1), max(int(resize_ratio * height), 1))
+    target_size = (int(resize_ratio * width), int(resize_ratio * height))
     resized_image = cropped_image.convert('RGB').resize(target_size, Image.ANTIALIAS)
     start = time.time()
     batch_seg_map = self.sess.run(
         self.OUTPUT_TENSOR_NAME,
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
-    deeplab_time = time.time() - start
+    model_time = time.time() - start
     seg_map = batch_seg_map[0]
 
-    # Convert the prediction to image type
-    if (cropped_image.size[0] < 1 or cropped_image.size[1] < 1):
-      print(cropped_image.size)
-      print(BB)
     pred = Image.fromarray(seg_map.astype(np.int32)).resize(cropped_image.size)
-
+    #pred.save("./predictions_breakSF/" + filename + "pred" + ".png")
     # Pad zeros in the cropped regions to get the same shape as target label
-    resized_pred = Image.new(mode, org_image.size)
+    new_arr = np.zeros((image.size[1], image.size[0]))
+    resized_pred = Image.fromarray(new_arr.astype(np.int32))
     resized_pred.paste(pred, (BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
     new_BB = self.getBoundingBox(resized_pred)
+    #resized_pred.save("./predictions_breakSF/" + filename + "resized_pred" + ".png")
 
-    return resized_pred, new_BB, deeplab_time
-
+    pred_map = np.array(resized_pred)
+  
+    return pred_map, new_BB, model_time
 
 
 def create_pascal_label_colormap():
@@ -164,30 +165,6 @@ def label_to_color_image(label):
   return colormap[label]
 
 
-BB_EXTRA = 0
-def getBoundingBox(image):
-    u = np.where(np.array(image)[:,:,0] == 128)
-    #u = np.where(image == 1)
-    if len(u[1]) != 0:
-      x_min = max(np.min(u[1]) - BB_EXTRA, 0)
-      x_max = max(np.max(u[1]) + BB_EXTRA, 0)#image.size[1])
-    else:
-      x_min = 0
-      x_max = image.size[1]
-
-    if len(u[0]) != 0:
-      y_min = max(np.min(u[0]) - BB_EXTRA, 0)
-      y_max = min(np.max(u[0]) + BB_EXTRA, image.size[0])
-    else:
-      y_min = 0
-      y_max = image.size[0]
-
-    xy_coor = [(x_min, y_min), (x_max, y_max)]
-    return xy_coor
-
-
-
-
 LABEL_NAMES = np.asarray([
     'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
     'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
@@ -199,56 +176,53 @@ FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
 
 #%%
 
-MODEL = DeepLabModel("../../train_DAVIS_FrozenGraph.tar.gz")
+#MODEL = DeepLabModel("../../train_COCO_FrozenGraph4.tar.gz")
 #MODEL = DeepLabModel("../../train_DAVIS_Blurred_FrozenGraph.tar.gz")
+#MODEL = DeepLabModel("../../train_DAVIS_FrozenGraph.tar.gz")
+MODEL = DeepLabModel("../../train_MSCOCO_MobileNetV2.tar.gz")
 print('model loaded successfully!')
 
 #%%
 total_time = 0
-deeplab_time = 0
-
-val_set = open("./ImageSets/val.txt", "r").read().split('\n')
-
-for val_case in val_set:
-  print(val_case)
-  for path, dirs, files in os.walk("./JPEGImages-copy/480p/" + val_case):
-  #for path, dirs, files in os.walk("./JPEGImages/480p/breakdance-flare/"):
+model_time = 0
+for path, dirs, files in os.walk("./JPEGImages/480p/breakdance/"):
+#for path, dirs, files in os.walk("./JPEGImages/480p/kid-football/"):
+#for path, dirs, files in os.walk("./JPEGImages/480p/breakdance-flare/"):
     files.sort()
-    frame_id = 1
+    frame_num = 1
     for filename in files:
         image = Image.open(path + "/" + filename)
 
-        if frame_id == 1:
-          segFile = filename.replace("jpg", "png")
-          label = Image.open("./Annotations/" + val_case + "/" + segFile)
-          BB = MODEL.getBoundingBox(label.resize(image.size))
+        if frame_num == 1:
+          gt_file = filename.replace(".jpg", ".png")
+          gt_img = Image.open("./Annotations/breakdance/" + gt_file)
+          gt_img = gt_img.resize(image.size)
+          BB = MODEL.getBoundingBox(gt_img)
 
         start_time = time.time()
-        seg_map, BB, model_time = MODEL.run(image, BB, image.mode)
-        deeplab_time += model_time
+        seg_map, BB, deeplab_time = MODEL.run(image, BB, filename)
         total_time += time.time() - start_time
-        #seg_image = label_to_color_image(seg_map).astype(np.uint8)
-        #seg_image = Image.fromarray(seg_image)
-        seg_map.resize(image.size)
-        blend = Image.blend(image, seg_map, alpha=0.7)
+        model_time += deeplab_time
+        seg_image = label_to_color_image(seg_map).astype(np.uint8)
+        seg_image = Image.fromarray(seg_image).resize(image.size)
+        blend = Image.blend(image, seg_image, alpha=0.7)
 
-        draw = ImageDraw.Draw(seg_map)
-        output = draw.rectangle(BB, outline=250)
-        del draw
+        #draw = ImageDraw.Draw(seg_image)
+        #output = draw.rectangle(BB, outline=250)
+        #del draw
 
-        BB = getBoundingBox(seg_map.resize(blend.size))
         draw = ImageDraw.Draw(blend)
         output = draw.rectangle(BB, outline=250)
         del draw
 
         filename = filename[:-4]
-        blend.save(path + "/predictions_" + filename + "_blend" + ".png")
-        #seg_image.save(path + "/segmentation__" + filename + ".png")
+        blend.save("./predictions/" + filename + "blend" + ".png")
+        #seg_image.save("./predictions_breakSF/" + filename + ".png")
 
-        frame_id += 1
+        frame_num += 1
         
-print(deeplab_time)
 print(total_time)
+print(model_time)
         
 #        #%%
 #gd = MODEL.sess.graph_def

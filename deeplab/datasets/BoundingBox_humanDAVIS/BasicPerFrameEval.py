@@ -4,6 +4,7 @@ from io import BytesIO
 import tarfile
 import tempfile
 from six.moves import urllib
+import time
 
 import numpy as np
 from PIL import Image
@@ -60,12 +61,14 @@ class DeepLabModel(object):
     resize_ratio = 1.0 * self.INPUT_SIZE / max(width, height)
     target_size = (int(resize_ratio * width), int(resize_ratio * height))
     resized_image = image.convert('RGB').resize(target_size, Image.ANTIALIAS)
+    start = time.time()
     batch_seg_map = self.sess.run(
         self.OUTPUT_TENSOR_NAME,
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
+    model_time = time.time() - start
     seg_map = batch_seg_map[0]
 
-    return resized_image, seg_map
+    return resized_image, seg_map, model_time
 
 
 def get_IoU(prediction, labelImage):
@@ -85,13 +88,15 @@ def get_IoU(prediction, labelImage):
   else:
     IoU_bg = 1
 
-  IoU = (IoU_human + IoU_bg) / 2
+  #IoU = (IoU_human + IoU_bg) / 2
+  IoU = ((0.5 * IoU_human) + (1.5 * IoU_bg)) / 2
 
   return IoU
 
 #%%
 
-MODEL = DeepLabModel("../../train_COCO_FrozenGraph4.tar.gz")
+#MODEL = DeepLabModel("../../train_COCO_FrozenGraph4.tar.gz")
+MODEL = DeepLabModel("../../train_MSCOCO_MobileNetV2.tar.gz")
 print('model loaded successfully!')
 
 #%%
@@ -99,6 +104,8 @@ print('model loaded successfully!')
 val_set = open("./ImageSets/val.txt", "r").read().split('\n')
 
 IoU = []
+model_time = 0
+forward_time = 0
 for val_case in val_set:
   class_IoU = []
   for _, _, files in os.walk("./Annotations/" + val_case):
@@ -106,7 +113,10 @@ for val_case in val_set:
     for segFile in files:
       imgFile = segFile.replace("png", "jpg")
       image = Image.open("./JPEGImages/480p/" + val_case + "/" + imgFile)
-      resized_im, seg_map = MODEL.run(image)
+      start = time.time()
+      resized_im, seg_map, deeplab_time = MODEL.run(image)
+      forward_time += time.time() - start
+      model_time += deeplab_time
 
       label = Image.open("./Annotations/" + val_case + "/" + segFile)
       resized_label = label.resize(resized_im.size)
@@ -122,3 +132,6 @@ for val_case in val_set:
 mIoU = np.average(IoU)
 print("mIOU :", mIoU)
 #%%
+
+print(model_time/2693)
+print(forward_time/2693)
