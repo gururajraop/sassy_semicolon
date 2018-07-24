@@ -73,8 +73,7 @@ class DeepLabModel(object):
     xy_coor = [(x_min, y_min), (x_max, y_max)]
     return xy_coor
 
-
-  def run(self, imagei, BB):
+  def run(self, image, BB):
     """Runs inference on a single image.
 
     Args:
@@ -107,13 +106,11 @@ class DeepLabModel(object):
     seg_map = batch_seg_map[0]
 
     pred = Image.fromarray(seg_map.astype(np.int32)).resize(cropped_image.size)
-    #pred.save("./predictions_breakSF/" + filename + "pred" + ".png")
     # Pad zeros in the cropped regions to get the same shape as target label
     new_arr = np.zeros((image.size[1], image.size[0]))
     resized_pred = Image.fromarray(new_arr.astype(np.int32))
     resized_pred.paste(pred, (BB[0][0], BB[0][1], BB[1][0], BB[1][1]))
     new_BB = self.getBoundingBox(resized_pred)
-    #resized_pred.save("./predictions_breakSF/" + filename + "resized_pred" + ".png")
 
     pred_map = np.array(resized_pred)
 
@@ -200,14 +197,15 @@ FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
 
 #MODEL = DeepLabModel("../../train_COCO_FrozenGraph4.tar.gz")
 #MODEL = DeepLabModel("../../train_DAVIS_Blurred_FrozenGraph.tar.gz")
-MODEL = DeepLabModel("../deeplab/train_DAVIS_FrozenGraph.tar.gz")
+#MODEL = DeepLabModel("../deeplab/train_DAVIS_FrozenGraph.tar.gz")
+MODEL = DeepLabModel("../deeplab/train_MSCOCO_MobileNetV2.tar.gz")
 print('model loaded successfully!')
 
 #%%
 model_time = 0
 total_time = 0
-for frame_id in range(1000):
-        image = Image.open("./Source2/Demo_" + str(frame_id) + ".jpg")
+for frame_id in range(1355):
+        image = Image.open("./Source/Demo_" + str(frame_id) + ".jpg")
 
         if frame_id == 0:
           BB = [(0,0), image.size]
@@ -230,7 +228,7 @@ for frame_id in range(1000):
         output = draw.rectangle(BB, outline=250)
         del draw
 
-        blend.save("./Result2/Demo_" + str(frame_id) + ".png")
+        blend.save("./Result/Demo_" + str(frame_id) + ".png")
         #frame_id += 1
 
 print(model_time)        
